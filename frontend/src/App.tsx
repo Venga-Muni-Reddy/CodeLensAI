@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { apiClient } from "./lib/api-client";
-import { Activity, Server, Database, Layers, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { useAuthStore } from "./stores/authStore";
+import { LoginForm } from "./features/auth/LoginForm";
+import { RegisterForm } from "./features/auth/RegisterForm";
+import { UserProfileView } from "./features/auth/UserProfileView";
+import {
+  Activity,
+  LogIn,
+  UserPlus,
+  Shield,
+} from "lucide-react";
 
 interface HealthLive {
   status: string;
@@ -17,14 +26,12 @@ interface HealthReady {
 }
 
 export const App: React.FC = () => {
+  const { isAuthenticated, fetchMe } = useAuthStore();
+  const [authView, setAuthView] = useState<"login" | "register">("login");
   const [liveData, setLiveData] = useState<HealthLive | null>(null);
   const [readyData, setReadyData] = useState<HealthReady | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchStatus = async () => {
-    setLoading(true);
-    setError(null);
+  const fetchHealth = async () => {
     try {
       const [liveRes, readyRes] = await Promise.all([
         apiClient.get("/health/live"),
@@ -32,221 +39,188 @@ export const App: React.FC = () => {
       ]);
       setLiveData(liveRes.data?.data || null);
       setReadyData(readyRes.data?.data || null);
-    } catch (err: any) {
-      setError(err.message || "Could not reach FastAPI backend");
-    } finally {
-      setLoading(false);
+    } catch {
+      setLiveData(null);
+      setReadyData(null);
     }
   };
 
   useEffect(() => {
-    fetchStatus();
+    fetchHealth();
+    fetchMe();
   }, []);
 
   return (
-    <main style={{ maxWidth: "800px", margin: "3.5rem auto", padding: "0 1.5rem" }}>
-      {/* Header */}
-      <header style={{ marginBottom: "2rem", textAlign: "center" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
-          <Activity size={36} color="#6366f1" />
-          <h1 style={{ fontSize: "2.25rem", fontWeight: 700, letterSpacing: "-0.03em" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Top Navigation Bar */}
+      <nav
+        style={{
+          borderBottom: "1px solid var(--border-color)",
+          background: "rgba(11, 15, 25, 0.8)",
+          backdropFilter: "blur(12px)",
+          padding: "0.75rem 1.5rem",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              borderRadius: "8px",
+              background: "rgba(99, 102, 241, 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Activity size={18} color="#818cf8" />
+          </div>
+          <span style={{ fontWeight: 700, fontSize: "1.1rem", letterSpacing: "-0.02em" }}>
             CodeLensAI
-          </h1>
+          </span>
+          <span
+            style={{
+              fontSize: "0.65rem",
+              padding: "2px 6px",
+              borderRadius: "4px",
+              background: "rgba(255, 255, 255, 0.05)",
+              color: "var(--text-muted)",
+              fontFamily: "JetBrains Mono, monospace",
+            }}
+          >
+            F-001 Auth Active
+          </span>
         </div>
-        <p style={{ color: "var(--text-secondary)", fontSize: "1rem" }}>
-          Repository Intelligence Platform &bull; Foundation & Scaffolding Health Check
-        </p>
-      </header>
 
-      {/* Action Bar */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "1rem" }}>
-        <button
-          onClick={fetchStatus}
-          disabled={loading}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            background: "rgba(99, 102, 241, 0.15)",
-            color: "#818cf8",
-            border: "1px solid rgba(99, 102, 241, 0.3)",
-            borderRadius: "6px",
-            padding: "0.5rem 0.9rem",
-            fontSize: "0.85rem",
-            cursor: loading ? "not-allowed" : "pointer",
-            fontWeight: 500,
-          }}
-        >
-          <RefreshCw size={14} className={loading ? "spin" : ""} />
-          {loading ? "Checking..." : "Refresh Status"}
-        </button>
-      </div>
-
-      {/* Main Status Cards */}
-      {error ? (
-        <section
-          style={{
-            padding: "1.5rem",
-            background: "rgba(239, 68, 68, 0.08)",
-            border: "1px solid rgba(239, 68, 68, 0.25)",
-            borderRadius: "12px",
-            color: "#fca5a5",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 600, fontSize: "1rem", marginBottom: "0.5rem" }}>
-            <AlertCircle size={20} color="#ef4444" />
-            Backend Disconnected
+        {/* Top Right Controls */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          {/* Health Indicators */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.75rem",
+              background: "rgba(255, 255, 255, 0.03)",
+              padding: "4px 10px",
+              borderRadius: "999px",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <span
+              style={{
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                background: readyData?.services?.mongodb === "connected" ? "#10b981" : "#f59e0b",
+              }}
+            />
+            <span style={{ color: "var(--text-secondary)" }}>
+              API & DB:{" "}
+              <strong style={{ color: liveData ? "#10b981" : "#ef4444" }}>
+                {liveData ? "Online" : "Offline"}
+              </strong>
+            </span>
           </div>
-          <p style={{ fontSize: "0.9rem", color: "#f87171", marginBottom: "0.75rem" }}>
-            {error}
-          </p>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-            Make sure your backend server is running in another terminal:
-            <br />
-            <code>cd backend ; .\.venv\Scripts\Activate.ps1 ; uvicorn app.main:app --reload</code>
-          </p>
-        </section>
-      ) : (
-        <section
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-color)",
-            borderRadius: "12px",
-            padding: "1.75rem",
-            backdropFilter: "blur(12px)",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <h2 style={{ fontSize: "1.1rem", marginBottom: "1.25rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <Server size={20} color="#6366f1" />
-            Live System Probes
-          </h2>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
-            {/* FastAPI Box */}
+          {!isAuthenticated && (
             <div
               style={{
-                padding: "1rem",
+                display: "flex",
+                background: "rgba(255, 255, 255, 0.04)",
+                padding: "2px",
                 borderRadius: "8px",
-                background: "rgba(255, 255, 255, 0.02)",
                 border: "1px solid var(--border-color)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
-                <CheckCircle2 size={16} color="#10b981" />
-                <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>FastAPI Server</span>
-              </div>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                Status: <strong style={{ color: "#10b981" }}>{liveData?.status || "healthy"}</strong>
-              </p>
-              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                v{liveData?.version} ({liveData?.environment})
-              </p>
-            </div>
+              <button
+                onClick={() => setAuthView("login")}
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: authView === "login" ? "rgba(99, 102, 241, 0.3)" : "transparent",
+                  color: authView === "login" ? "#ffffff" : "var(--text-muted)",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <LogIn size={13} /> Sign In
+              </button>
 
-            {/* MongoDB Box */}
-            <div
-              style={{
-                padding: "1rem",
-                borderRadius: "8px",
-                background: "rgba(255, 255, 255, 0.02)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
-                <CheckCircle2
-                  size={16}
-                  color={readyData?.services?.mongodb === "connected" ? "#10b981" : "#f59e0b"}
-                />
-                <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>MongoDB 7.0</span>
-              </div>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                Status:{" "}
-                <strong
-                  style={{
-                    color: readyData?.services?.mongodb === "connected" ? "#10b981" : "#f59e0b",
-                  }}
-                >
-                  {readyData?.services?.mongodb || "checking..."}
-                </strong>
-              </p>
-              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                Port: 27017 (Docker)
-              </p>
+              <button
+                onClick={() => setAuthView("register")}
+                style={{
+                  padding: "4px 12px",
+                  borderRadius: "6px",
+                  border: "none",
+                  background: authView === "register" ? "rgba(99, 102, 241, 0.3)" : "transparent",
+                  color: authView === "register" ? "#ffffff" : "var(--text-muted)",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                }}
+              >
+                <UserPlus size={13} /> Create Account
+              </button>
             </div>
+          )}
+        </div>
+      </nav>
 
-            {/* Redis Box */}
-            <div
-              style={{
-                padding: "1rem",
-                borderRadius: "8px",
-                background: "rgba(255, 255, 255, 0.02)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
-                <CheckCircle2
-                  size={16}
-                  color={readyData?.services?.redis === "connected" ? "#10b981" : "#f59e0b"}
-                />
-                <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>Redis 7</span>
-              </div>
-              <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)" }}>
-                Status:{" "}
-                <strong
-                  style={{
-                    color: readyData?.services?.redis === "connected" ? "#10b981" : "#f59e0b",
-                  }}
-                >
-                  {readyData?.services?.redis || "checking..."}
-                </strong>
-              </p>
-              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-                Port: 6379 (Docker)
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Main Content Area */}
+      <main style={{ flex: 1, padding: "2.5rem 1.5rem" }}>
+        {isAuthenticated ? (
+          <UserProfileView />
+        ) : authView === "login" ? (
+          <LoginForm onSwitchToRegister={() => setAuthView("register")} />
+        ) : (
+          <RegisterForm onSwitchToLogin={() => setAuthView("login")} />
+        )}
+      </main>
 
-      {/* Info Grid */}
-      <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-        <div
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-color)",
-            borderRadius: "12px",
-            padding: "1.25rem",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-            <Database size={18} color="#6366f1" />
-            <h3 style={{ fontSize: "0.95rem" }}>Architecture Baseline</h3>
-          </div>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: 1.5 }}>
-            Modular Monolith backend (Python + FastAPI) with React + TypeScript frontend, fully isolated data stores.
-          </p>
+      {/* Footer System Status Bar */}
+      <footer
+        style={{
+          borderTop: "1px solid var(--border-color)",
+          padding: "1rem 1.5rem",
+          background: "rgba(11, 15, 25, 0.9)",
+          fontSize: "0.8rem",
+          color: "var(--text-muted)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <span>CodeLensAI &bull; Autonomous Code Graph & Static Intelligence</span>
+          <span>&bull;</span>
+          <span style={{ color: "#38bdf8" }}>MongoDB 7.0: {readyData?.services?.mongodb || "connected"}</span>
+          <span>&bull;</span>
+          <span style={{ color: "#818cf8" }}>Redis 7: {readyData?.services?.redis || "connected"}</span>
         </div>
 
-        <div
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-color)",
-            borderRadius: "12px",
-            padding: "1.25rem",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
-            <Layers size={18} color="#6366f1" />
-            <h3 style={{ fontSize: "0.95rem" }}>Next Milestone</h3>
-          </div>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: 1.5 }}>
-            Ready to implement <strong>Feature F-001: User Authentication & Account Management</strong>.
-          </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Shield size={14} color="#6366f1" />
+          <span>Feature F-001 (JWT Authentication & Password Hashing)</span>
         </div>
-      </section>
-    </main>
+      </footer>
+    </div>
   );
 };
 

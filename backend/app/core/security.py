@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 from jose import jwt
@@ -19,9 +20,12 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(subject: str, extra_claims: Optional[Dict[str, Any]] = None) -> str:
     """Create a signed JWT access token."""
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode = {
         "sub": str(subject),
+        "jti": uuid.uuid4().hex,
+        "iat": int(now.timestamp()),
         "exp": expire,
         "type": "access",
     }
@@ -32,9 +36,12 @@ def create_access_token(subject: str, extra_claims: Optional[Dict[str, Any]] = N
 
 def create_refresh_token(subject: str) -> str:
     """Create a signed JWT refresh token."""
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode = {
         "sub": str(subject),
+        "jti": uuid.uuid4().hex,
+        "iat": int(now.timestamp()),
         "exp": expire,
         "type": "refresh",
     }

@@ -28,8 +28,19 @@ async def connect_to_mongo() -> None:
         # Verify connection
         await db_manager.client.admin.command("ping")
         logger.info("Successfully connected to MongoDB database '%s'.", settings.MONGODB_DB_NAME)
+        # Ensure collection indexes
+        await init_db_indexes(db_manager.db)
     except Exception as e:
         logger.warning("MongoDB connection check failed (is MongoDB running?): %s", e)
+
+
+async def init_db_indexes(db: AsyncIOMotorDatabase) -> None:
+    """Initialize necessary MongoDB indexes."""
+    try:
+        await db.users.create_index("email", unique=True)
+        logger.info("Ensured unique index on users.email")
+    except Exception as exc:
+        logger.warning("Failed to initialize database indexes: %s", exc)
 
 
 async def close_mongo_connection() -> None:
