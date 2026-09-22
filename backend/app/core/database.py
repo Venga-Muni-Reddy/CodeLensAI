@@ -39,6 +39,8 @@ async def init_db_indexes(db: AsyncIOMotorDatabase) -> None:
     try:
         await db.users.create_index("email", unique=True)
         logger.info("Ensured unique index on users.email")
+        await db.projects.create_index([("owner_id", 1), ("is_deleted", 1)])
+        logger.info("Ensured compound index on projects.owner_id and projects.is_deleted")
     except Exception as exc:
         logger.warning("Failed to initialize database indexes: %s", exc)
 
