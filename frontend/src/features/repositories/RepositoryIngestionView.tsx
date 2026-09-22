@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useProjectStore } from "../../stores/projectStore";
 import { useRepositoryStore } from "../../stores/repositoryStore";
+import { RepositoryIntelligenceView } from "../intelligence/RepositoryIntelligenceView";
 
 export const RepositoryIngestionView: React.FC = () => {
   const { projects, activeProject, setActiveProject } = useProjectStore();
@@ -39,6 +40,9 @@ export const RepositoryIngestionView: React.FC = () => {
     pollRepositoryStatus,
     clearError,
   } = useRepositoryStore();
+
+  // Inspecting specific repository intelligence
+  const [inspectingRepoId, setInspectingRepoId] = useState<string | null>(null);
 
   // Mode Switcher: "github" or "zip"
   const [sourceMode, setSourceMode] = useState<"github" | "zip">("zip");
@@ -280,6 +284,15 @@ export const RepositoryIngestionView: React.FC = () => {
     if (!window.confirm("Are you sure you want to soft-delete this repository?")) return;
     await deleteRepository(repoId);
   };
+
+  if (inspectingRepoId) {
+    return (
+      <RepositoryIntelligenceView
+        selectedRepoId={inspectingRepoId}
+        onBack={() => setInspectingRepoId(null)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -1226,6 +1239,15 @@ export const RepositoryIngestionView: React.FC = () => {
                   >
                     {repo.status.toUpperCase()}
                   </span>
+
+                  <button
+                    onClick={() => setInspectingRepoId(repo.id)}
+                    title="View Code Intelligence & AST"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 text-xs font-mono transition-colors"
+                  >
+                    <Cpu className="w-3.5 h-3.5" />
+                    <span>View Intelligence</span>
+                  </button>
 
                   <button
                     onClick={(e) => handleDeleteRepo(repo.id, e)}

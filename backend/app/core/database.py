@@ -44,6 +44,10 @@ async def init_db_indexes(db: AsyncIOMotorDatabase) -> None:
         await db.repositories.create_index([("project_id", 1), ("is_deleted", 1)])
         await db.repositories.create_index([("owner_id", 1), ("is_deleted", 1)])
         logger.info("Ensured compound indexes on repositories collection")
+        await db.analysis_jobs.create_index([("repository_id", 1), ("created_at", -1)])
+        await db.analysis_jobs.create_index([("owner_id", 1)])
+        await db.repository_analyses.create_index([("repository_id", 1), ("owner_id", 1)], unique=True)
+        logger.info("Ensured compound indexes on analysis collections")
     except Exception as exc:
         logger.warning("Failed to initialize database indexes: %s", exc)
 
