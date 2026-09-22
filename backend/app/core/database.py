@@ -41,8 +41,12 @@ async def init_db_indexes(db: AsyncIOMotorDatabase) -> None:
         logger.info("Ensured unique index on users.email")
         await db.projects.create_index([("owner_id", 1), ("is_deleted", 1)])
         logger.info("Ensured compound index on projects.owner_id and projects.is_deleted")
+        await db.repositories.create_index([("project_id", 1), ("is_deleted", 1)])
+        await db.repositories.create_index([("owner_id", 1), ("is_deleted", 1)])
+        logger.info("Ensured compound indexes on repositories collection")
     except Exception as exc:
         logger.warning("Failed to initialize database indexes: %s", exc)
+
 
 
 async def close_mongo_connection() -> None:

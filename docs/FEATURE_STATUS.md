@@ -21,7 +21,7 @@ Tracking matrix for all CodeLensAI product features and development phases as de
 | **Phase 1** | Project Scaffolding & Infrastructure Foundation | `COMPLETED` | 2026-09-21 |
 | **Phase 2** | User Authentication & Account Isolation (F-001) | `COMPLETED` | 2026-09-21 |
 | **Phase 3** | Project Management & Multi-Tenancy (F-002) | `COMPLETED` | 2026-09-22 |
-| **Phase 4** | Repository Ingestion (GitHub & ZIP) (F-003, F-004) | `BACKLOG` | — |
+| **Phase 4** | Repository Ingestion (GitHub & ZIP) (F-003, F-004) | `IN_PROGRESS` | — |
 | **Phase 5** | Analysis Pipeline & Language Parsing (F-005 - F-008) | `BACKLOG` | — |
 | **Phase 6** | Dependency Graph & Architecture Visualizer (F-009) | `BACKLOG` | — |
 | **Phase 7** | Feature Discovery & Semantic Mapping (F-010) | `BACKLOG` | — |
@@ -39,8 +39,7 @@ Tracking matrix for all CodeLensAI product features and development phases as de
 | **FOUNDATION** | Local Dev Infrastructure & Scaffolding | PRD §63-66 | §2-5 | `COMPLETED` | Docker Compose (Mongo + Redis), FastAPI, Vite React TS, AI Fallback chain |
 | **F-001** | User Authentication & Account Management | PRD §34 | §6-17 | `COMPLETED` | JWT Auth, bcrypt password hashing, login/register, token refresh, Stitch UI |
 | **F-002** | Project Management | PRD §33 | §18-23 | `COMPLETED` | Project CRUD, user tenant isolation, Stitch Dashboard & Homepage |
-
-| **F-003** | GitHub Repository Import | PRD §8.1 | §24-26 | `BACKLOG` | Git clone, shallow ingest, progress notifications |
+| **F-003** | GitHub Repository Import | PRD §8.1 | §24-26 | `COMPLETED` | Git shallow clone (`--depth 1`), tenant-isolated storage, commit SHA & metrics, Stitch Source Cockpit UI |
 | **F-004** | ZIP Repository Import | PRD §8.2 | §27 | `BACKLOG` | Archive upload, secure unzipping, filtering binaries/node_modules |
 | **F-005** | Repository Analysis Pipeline | PRD §10, 36 | §28, 33-38 | `BACKLOG` | Async worker orchestration, job tracking, WebSocket updates |
 | **F-006** | Language Detection & Statistics | PRD §11-13 | §33-35 | `BACKLOG` | File extension/heuristic mapping, LOC counting |

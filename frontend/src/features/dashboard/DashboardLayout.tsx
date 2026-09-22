@@ -25,6 +25,7 @@ import {
 import { useAuthStore } from "../../stores/authStore";
 import { useProjectStore } from "../../stores/projectStore";
 import { ProjectManager } from "../projects/ProjectManager";
+import { RepositoryIngestionView } from "../repositories/RepositoryIngestionView";
 
 interface DashboardLayoutProps {
   onNavigateHome?: () => void;
@@ -34,14 +35,6 @@ const FUTURE_FEATURES: Record<
   string,
   { title: string; featureId: string; phase: string; description: string; icon: React.ElementType }
 > = {
-  repositories: {
-    title: "Repository Ingestion Engine",
-    featureId: "F-003 & F-004",
-    phase: "Phase 4",
-    description:
-      "Automated GitHub repository cloning and secure ZIP archive uploads with shallow ingestion, background worker processing, and multi-tenant storage.",
-    icon: GitBranch,
-  },
   architecture: {
     title: "Architecture Detection & Layer Explorer",
     featureId: "F-007 & F-008",
@@ -50,6 +43,7 @@ const FUTURE_FEATURES: Record<
       "Automatic discovery of architectural boundaries (Clean Architecture, MVC, Microservices, Hexagonal) with interactive layer isolation.",
     icon: Shield,
   },
+
   graph: {
     title: "Dependency Intelligence & Graph Visualizer",
     featureId: "F-009",
@@ -179,20 +173,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
 
                 <button
                   onClick={() => setActiveTab("repositories")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     activeTab === "repositories"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40 shadow-sm"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
-                  <div className="flex items-center space-x-2.5">
-                    <GitBranch className="w-4 h-4" />
-                    <span>Repositories</span>
-                  </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    Soon
-                  </span>
+                  <GitBranch className="w-4 h-4 text-indigo-400" />
+                  <span>Repositories</span>
                 </button>
+
               </div>
             </div>
 
@@ -408,7 +398,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
             </div>
 
             <button
-              onClick={() => setActiveTab("projects")}
+              onClick={() => setActiveTab("repositories")}
               className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/25 flex items-center space-x-1.5"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -421,6 +411,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
         <main className="flex-1 overflow-y-auto p-6 space-y-6">
           {activeTab === "projects" ? (
             <ProjectManager />
+          ) : activeTab === "repositories" ? (
+            <RepositoryIngestionView />
           ) : activeTab in FUTURE_FEATURES ? (
             (() => {
               const feat = FUTURE_FEATURES[activeTab];
