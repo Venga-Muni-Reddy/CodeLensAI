@@ -24,3 +24,12 @@ export interface RepositoryCreateGitHubPayload {
   shallow_clone?: boolean;
   exclude_binaries?: boolean;
 }
+
+export interface RepositoryCreateZipPayload {
+  file: File;
+  name?: string;
+  branch?: string;
+  exclude_dependencies?: boolean;
+  exclude_binaries?: boolean;
+}
+

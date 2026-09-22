@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { apiClient } from "../lib/api-client";
-import type { Repository, RepositoryCreateGitHubPayload } from "../types/repository";
+import type { Repository, RepositoryCreateGitHubPayload, RepositoryCreateZipPayload } from "../types/repository";
 
 interface RepositoryState {
   repositories: Repository[];
@@ -11,6 +11,7 @@ interface RepositoryState {
 
   fetchRepositories: (projectId: string) => Promise<void>;
   importGitHubRepository: (projectId: string, payload: RepositoryCreateGitHubPayload) => Promise<Repository>;
+  importZipRepository: (projectId: string, payload: RepositoryCreateZipPayload) => Promise<Repository>;
   deleteRepository: (repositoryId: string) => Promise<void>;
   pollRepositoryStatus: (repositoryId: string) => Promise<Repository>;
   setActiveRepository: (repo: Repository | null) => void;
@@ -64,6 +65,42 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         err.response?.data?.error?.message ||
         err.response?.data?.message ||
         "Failed to import GitHub repository.";
+      set({ error: message, isIngesting: false });
+      throw new Error(message);
+    }
+  },
+
+  importZipRepository: async (projectId: string, payload: RepositoryCreateZipPayload) => {
+    set({ isIngesting: true, error: null });
+    try {
+      const formData = new FormData();
+      formData.append("file", payload.file);
+      if (payload.name) formData.append("name", payload.name);
+      if (payload.branch) formData.append("branch", payload.branch);
+      formData.append("exclude_dependencies", String(payload.exclude_dependencies ?? true));
+      formData.append("exclude_binaries", String(payload.exclude_binaries ?? true));
+
+      const response = await apiClient.post<{ success: boolean; data: Repository }>(
+        `/projects/${projectId}/repositories/zip`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      const newRepo = response.data.data;
+      set({
+        repositories: [newRepo, ...get().repositories],
+        activeRepository: newRepo,
+        isIngesting: false,
+      });
+      return newRepo;
+    } catch (err: any) {
+      const message =
+        err.response?.data?.error?.message ||
+        err.response?.data?.message ||
+        "Failed to upload ZIP repository.";
       set({ error: message, isIngesting: false });
       throw new Error(message);
     }

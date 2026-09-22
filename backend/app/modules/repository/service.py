@@ -1,11 +1,13 @@
 import asyncio
 from datetime import datetime, timezone
+import io
 import logging
 import os
 import re
 import shutil
 import subprocess
 from typing import List, Optional, Tuple
+import zipfile
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -349,3 +351,207 @@ async def delete_repository(
         )
 
     logger.info("Repository soft-deleted: id=%s owner_id=%s", repository_id, owner_id)
+
+
+IGNORED_ZIP_DIRS = {
+    "node_modules",
+    "vendor",
+    ".venv",
+    "venv",
+    "env",
+    "__pycache__",
+    ".git",
+    "dist",
+    "build",
+    ".next",
+    ".nuxt",
+    "target",
+    "bin",
+    "obj",
+    ".idea",
+    ".vscode",
+}
+
+BINARY_ZIP_EXTENSIONS = {
+    ".exe", ".dll", ".so", ".dylib", ".bin", ".iso", ".img",
+    ".zip", ".tar", ".gz", ".7z", ".rar",
+    ".mp4", ".avi", ".mkv", ".mov", ".mp3", ".wav",
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx",
+}
+
+MAX_BINARY_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+def extract_zip_archive(
+    zip_source: bytes | str,
+    target_dir: str,
+    exclude_dependencies: bool = True,
+    exclude_binaries: bool = True,
+) -> Tuple[int, int, int]:
+    """
+    Safely extract zip archive with zip-slip protection, dependency filtering, and binary filtering.
+    Returns (file_count, extracted_size_bytes, purged_noise_count).
+    """
+    os.makedirs(target_dir, exist_ok=True)
+    target_dir_abs = os.path.abspath(target_dir)
+
+    file_count = 0
+    total_size = 0
+    purged_count = 0
+
+    source = io.BytesIO(zip_source) if isinstance(zip_source, bytes) else zip_source
+
+    with zipfile.ZipFile(source, "r") as zf:
+        for member in zf.infolist():
+            raw_filename = member.filename
+
+            # 1. Zip-Slip & Path Traversal Prevention
+            # Reject raw directory traversal sequences
+            normalized_parts = raw_filename.replace("\\", "/").split("/")
+            if ".." in normalized_parts or raw_filename.startswith("/") or raw_filename.startswith("\\"):
+                raise APIError(
+                    status_code=400,
+                    code="ZIP_TRAVERSAL_ATTACK",
+                    message=f"Path traversal detected in archive entry: {raw_filename}",
+                )
+
+            dest_path = os.path.abspath(os.path.join(target_dir_abs, raw_filename))
+            try:
+                common = os.path.commonpath([target_dir_abs, dest_path])
+            except ValueError:
+                raise APIError(
+                    status_code=400,
+                    code="ZIP_TRAVERSAL_ATTACK",
+                    message=f"Invalid destination drive for entry: {raw_filename}",
+                )
+
+            if common != target_dir_abs:
+                raise APIError(
+                    status_code=400,
+                    code="ZIP_TRAVERSAL_ATTACK",
+                    message=f"Path traversal detected in archive entry: {raw_filename}",
+                )
+
+            # Skip directories themselves
+            if member.is_dir() or raw_filename.endswith("/"):
+                continue
+
+            path_parts_lower = [p.lower() for p in normalized_parts]
+
+            # 2. Dependency tree filtering
+            if exclude_dependencies:
+                if any(part in IGNORED_ZIP_DIRS for part in path_parts_lower):
+                    purged_count += 1
+                    continue
+
+            # 3. Binary & oversized file filtering
+            _, ext = os.path.splitext(raw_filename.lower())
+            if exclude_binaries:
+                if ext in BINARY_ZIP_EXTENSIONS or member.file_size > MAX_BINARY_FILE_SIZE:
+                    purged_count += 1
+                    continue
+
+            # Extract validated safe file
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            with zf.open(member) as source_file, open(dest_path, "wb") as target_file:
+                shutil.copyfileobj(source_file, target_file)
+
+            file_count += 1
+            total_size += member.file_size
+
+    return file_count, total_size, purged_count
+
+
+async def import_zip_repository(
+    db: AsyncIOMotorDatabase,
+    owner_id: str,
+    project_id: str,
+    file_bytes: bytes,
+    filename: str,
+    repo_name: Optional[str] = None,
+    branch: Optional[str] = "archive-main",
+    exclude_dependencies: bool = True,
+    exclude_binaries: bool = True,
+) -> RepositoryResponse:
+    """Validate project ownership, safely unpack ZIP archive, and register repository."""
+    try:
+        o_oid = ObjectId(owner_id)
+        p_oid = ObjectId(project_id)
+    except Exception:
+        raise APIError(status_code=400, code="INVALID_ID_FORMAT", message="Invalid project or user ID format.")
+
+    project = await db.projects.find_one({"_id": p_oid, "owner_id": o_oid, "is_deleted": False})
+    if not project:
+        raise APIError(status_code=404, code="PROJECT_NOT_FOUND", message="Project not found or access denied.")
+
+    # Sanitize repository name
+    if repo_name and repo_name.strip():
+        name = repo_name.strip()
+    else:
+        clean_name = os.path.splitext(filename)[0].strip()
+        name = clean_name if clean_name else "archive-repo"
+
+    repo_oid = ObjectId()
+    storage_rel_path = os.path.join(str(o_oid), str(p_oid), str(repo_oid))
+    target_abs_path = os.path.abspath(os.path.join(settings.LOCAL_STORAGE_PATH, storage_rel_path))
+
+    now = datetime.now(timezone.utc)
+
+    # Perform extraction in worker thread pool
+    try:
+        file_count, size_bytes, purged_count = await asyncio.to_thread(
+            extract_zip_archive,
+            file_bytes,
+            target_abs_path,
+            exclude_dependencies,
+            exclude_binaries,
+        )
+    except zipfile.BadZipFile:
+        raise APIError(
+            status_code=400,
+            code="INVALID_ZIP_ARCHIVE",
+            message="The uploaded file is not a valid or non-corrupted ZIP archive.",
+        )
+    except APIError:
+        shutil.rmtree(target_abs_path, ignore_errors=True)
+        raise
+    except Exception as exc:
+        shutil.rmtree(target_abs_path, ignore_errors=True)
+        logger.exception("Failed to extract zip archive for repo_id=%s: %s", repo_oid, exc)
+        raise APIError(
+            status_code=500,
+            code="ZIP_EXTRACTION_FAILED",
+            message=f"Failed to extract zip archive: {str(exc)}",
+        )
+
+    repo_doc = {
+        "_id": repo_oid,
+        "project_id": p_oid,
+        "owner_id": o_oid,
+        "name": name,
+        "source_type": "zip",
+        "source_url": None,
+        "default_branch": branch or "archive-main",
+        "commit_sha": f"zip-{str(repo_oid)[-7:]}",
+        "size_bytes": size_bytes,
+        "file_count": file_count,
+        "status": "ready",
+        "storage_key": storage_rel_path.replace("\\", "/"),
+        "error_message": None,
+        "is_deleted": False,
+        "deleted_at": None,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    await db.repositories.insert_one(repo_doc)
+    await db.projects.update_one({"_id": p_oid}, {"$inc": {"repository_count": 1}})
+
+    logger.info(
+        "Successfully ingested ZIP repo_id=%s name=%s files=%d size=%d purged=%d",
+        repo_oid, name, file_count, size_bytes, purged_count
+    )
+
+    return repo_doc_to_response(repo_doc)
+
