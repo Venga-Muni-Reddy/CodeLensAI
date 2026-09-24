@@ -22,10 +22,12 @@ import {
   Bolt,
   FileCode,
   Info,
+  Network,
 } from "lucide-react";
 import { useProjectStore } from "../../stores/projectStore";
 import { useRepositoryStore } from "../../stores/repositoryStore";
 import { RepositoryIntelligenceView } from "../intelligence/RepositoryIntelligenceView";
+import { DependencyGraphView } from "../intelligence/DependencyGraphView";
 
 export const RepositoryIngestionView: React.FC = () => {
   const { projects, activeProject, setActiveProject } = useProjectStore();
@@ -41,8 +43,9 @@ export const RepositoryIngestionView: React.FC = () => {
     clearError,
   } = useRepositoryStore();
 
-  // Inspecting specific repository intelligence
+  // Inspecting specific repository intelligence or dependency graph
   const [inspectingRepoId, setInspectingRepoId] = useState<string | null>(null);
+  const [viewingGraphRepoId, setViewingGraphRepoId] = useState<string | null>(null);
 
   // Mode Switcher: "github" or "zip"
   const [sourceMode, setSourceMode] = useState<"github" | "zip">("zip");
@@ -284,6 +287,15 @@ export const RepositoryIngestionView: React.FC = () => {
     if (!window.confirm("Are you sure you want to soft-delete this repository?")) return;
     await deleteRepository(repoId);
   };
+
+  if (viewingGraphRepoId) {
+    return (
+      <DependencyGraphView
+        selectedRepoId={viewingGraphRepoId}
+        onBack={() => setViewingGraphRepoId(null)}
+      />
+    );
+  }
 
   if (inspectingRepoId) {
     return (
@@ -1242,11 +1254,20 @@ export const RepositoryIngestionView: React.FC = () => {
 
                   <button
                     onClick={() => setInspectingRepoId(repo.id)}
-                    title="View Code Intelligence & AST"
+                    title="View Code Intelligence & Summary"
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 border border-indigo-500/20 text-xs font-mono transition-colors"
                   >
                     <Cpu className="w-3.5 h-3.5" />
-                    <span>View Intelligence</span>
+                    <span>Intelligence</span>
+                  </button>
+
+                  <button
+                    onClick={() => setViewingGraphRepoId(repo.id)}
+                    title="View AST Dependency Graph & Architecture"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600/10 hover:bg-cyan-600/20 text-cyan-400 border border-cyan-500/20 text-xs font-mono transition-colors"
+                  >
+                    <Network className="w-3.5 h-3.5" />
+                    <span>Dependency Graph</span>
                   </button>
 
                   <button

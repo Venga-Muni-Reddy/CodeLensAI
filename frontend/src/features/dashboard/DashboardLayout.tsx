@@ -26,6 +26,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { useProjectStore } from "../../stores/projectStore";
 import { ProjectManager } from "../projects/ProjectManager";
 import { RepositoryIngestionView } from "../repositories/RepositoryIngestionView";
+import { DependencyGraphView } from "../intelligence/DependencyGraphView";
 
 interface DashboardLayoutProps {
   onNavigateHome?: () => void;
@@ -35,23 +36,6 @@ const FUTURE_FEATURES: Record<
   string,
   { title: string; featureId: string; phase: string; description: string; icon: React.ElementType }
 > = {
-  architecture: {
-    title: "Architecture Detection & Layer Explorer",
-    featureId: "F-007 & F-008",
-    phase: "Phase 5",
-    description:
-      "Automatic discovery of architectural boundaries (Clean Architecture, MVC, Microservices, Hexagonal) with interactive layer isolation.",
-    icon: Shield,
-  },
-
-  graph: {
-    title: "Dependency Intelligence & Graph Visualizer",
-    featureId: "F-009",
-    phase: "Phase 6",
-    description:
-      "High-definition interactive topological graph of cross-module calls, circular dependency cycle detection, and symbol call trees.",
-    icon: Network,
-  },
   features: {
     title: "Feature Discovery & Semantic Flow Mapping",
     featureId: "F-010",
@@ -196,16 +180,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
                   onClick={() => setActiveTab("architecture")}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     activeTab === "architecture"
-                      ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40"
+                      ? "bg-[#191c28] text-cyan-300 border border-cyan-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <Shield className="w-4 h-4" />
+                    <Shield className="w-4 h-4 text-cyan-400" />
                     <span>Architecture</span>
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    Soon
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                    Live
                   </span>
                 </button>
 
@@ -218,11 +202,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <Network className="w-4 h-4" />
+                    <Network className="w-4 h-4 text-indigo-400" />
                     <span>Dependency Graph</span>
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    Soon
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                    Live
                   </span>
                 </button>
 
@@ -230,16 +214,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
                   onClick={() => setActiveTab("features")}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     activeTab === "features"
-                      ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40"
+                      ? "bg-[#191c28] text-amber-300 border border-amber-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <Sparkles className="w-4 h-4" />
-                    <span>Features</span>
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Feature Discovery</span>
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    Soon
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold">
+                    Next
                   </span>
                 </button>
 
@@ -408,11 +392,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
         </header>
 
         {/* Scrollable Main Viewport */}
-        <main className="flex-1 overflow-y-auto p-6 space-y-6">
+        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
           {activeTab === "projects" ? (
             <ProjectManager />
           ) : activeTab === "repositories" ? (
             <RepositoryIngestionView />
+          ) : activeTab === "graph" || activeTab === "architecture" ? (
+            <DependencyGraphView onBack={() => setActiveTab("dashboard")} />
           ) : activeTab in FUTURE_FEATURES ? (
             (() => {
               const feat = FUTURE_FEATURES[activeTab];

@@ -23,7 +23,7 @@ Tracking matrix for all CodeLensAI product features and development phases as de
 | **Phase 3** | Project Management & Multi-Tenancy (F-002) | `COMPLETED` | 2026-09-22 |
 | **Phase 4** | Repository Ingestion (GitHub & ZIP) (F-003, F-004) | `COMPLETED` | 2026-09-22 |
 | **Phase 5** | Analysis Pipeline & Language Parsing (F-005 - F-007) | `COMPLETED` | 2026-09-22 |
-| **Phase 6** | Dependency Graph & Architecture Visualizer (F-008, F-009) | `BACKLOG` | — |
+| **Phase 6** | Dependency Graph & Architecture Visualizer (F-008, F-009) | `COMPLETED` | 2026-09-24 |
 | **Phase 7** | Feature Discovery & Semantic Mapping (F-010) | `BACKLOG` | — |
 | **Phase 8** | Repository-Aware AI Assistant & Explanations (F-011) | `BACKLOG` | — |
 | **Phase 9** | Impact Analysis Engine (F-012) | `BACKLOG` | — |
@@ -44,8 +44,8 @@ Tracking matrix for all CodeLensAI product features and development phases as de
 | **F-005** | Repository Analysis Pipeline | PRD §10, 36 | §28, 33-38 | `COMPLETED` | Non-blocking background worker, job tracking (queued, analyzing, completed), retry logic, thread-safe scanner |
 | **F-006** | Language Detection & Statistics | PRD §11-13 | §33-35 | `COMPLETED` | Multi-language disk scanner, SLOC/comment/blank counters, language percentage breakdown, Stitch visual distribution |
 | **F-007** | Technology & Framework Detection | PRD §16 | §30, 35 | `COMPLETED` | Package manifest parsers (`package.json`, `requirements.txt`, `pyproject.toml`, `Cargo.toml`, `go.mod`), category badges |
-| **F-008** | Architecture Detection & Exploration | PRD §17-18 | §31, 35 | `BACKLOG` | Layer detection (MVC, clean arch, microservices heuristics) |
-| **F-009** | Dependency Intelligence & Graph Visualization | PRD §19-20 | §43-48 | `BACKLOG` | AST/Tree-sitter symbol relationships, interactive graph |
+| **F-008** | Architecture Detection & Exploration | PRD §17-18 | §31, 35 | `COMPLETED` | Automated tier detection (Routing, Services, Persistence, Infra), pattern classification (Layered, Clean Arch, MVC, Modular Monolith) |
+| **F-009** | Dependency Intelligence & Graph Visualization | PRD §19-20 | §43-48 | `COMPLETED` | AST import resolver, Tarjan cycle detector, Martin coupling (Ca, Ce, I), blast radius estimator, Scrollable 3D Architecture Canvas, spotlight de-cluttering, and interactive execution flow tracer |
 | **F-010** | Feature Discovery & Flow Mapping | PRD §21-23 | §49-52 | `BACKLOG` | Natural language feature query & code mapping |
 | **F-011** | Repository-Aware AI Assistant & Chat | PRD §24-25 | §53-64 | `BACKLOG` | RAG context assembly, code explanation, token streaming |
 | **F-012** | Impact Analysis Engine | PRD §26-27 | §65-67 | `BACKLOG` | Blast radius analysis of changing functions/classes |
