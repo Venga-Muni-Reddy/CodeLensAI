@@ -27,6 +27,7 @@ import { useProjectStore } from "../../stores/projectStore";
 import { ProjectManager } from "../projects/ProjectManager";
 import { RepositoryIngestionView } from "../repositories/RepositoryIngestionView";
 import { DependencyGraphView } from "../intelligence/DependencyGraphView";
+import { FeatureDiscoveryView } from "../intelligence/FeatureDiscoveryView";
 
 interface DashboardLayoutProps {
   onNavigateHome?: () => void;
@@ -36,14 +37,6 @@ const FUTURE_FEATURES: Record<
   string,
   { title: string; featureId: string; phase: string; description: string; icon: React.ElementType }
 > = {
-  features: {
-    title: "Feature Discovery & Semantic Flow Mapping",
-    featureId: "F-010",
-    phase: "Phase 7",
-    description:
-      "Search user-facing features in plain English and instantly map them to concrete controllers, services, database models, and routes.",
-    icon: Sparkles,
-  },
   ai: {
     title: "Repository-Aware AI Assistant & Chat",
     featureId: "F-011",
@@ -222,8 +215,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
                     <Sparkles className="w-4 h-4 text-amber-400" />
                     <span>Feature Discovery</span>
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold">
-                    Next
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                    Live
                   </span>
                 </button>
 
@@ -236,11 +229,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <MessageSquareCode className="w-4 h-4" />
+                    <MessageSquareCode className="w-4 h-4 text-indigo-400" />
                     <span>AI Assistant</span>
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    Soon
+                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold">
+                    Next
                   </span>
                 </button>
 
@@ -391,14 +384,20 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
           </div>
         </header>
 
-        {/* Scrollable Main Viewport */}
-        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
+        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" || activeTab === "features" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
           {activeTab === "projects" ? (
             <ProjectManager />
           ) : activeTab === "repositories" ? (
             <RepositoryIngestionView />
           ) : activeTab === "graph" || activeTab === "architecture" ? (
             <DependencyGraphView onBack={() => setActiveTab("dashboard")} />
+          ) : activeTab === "features" ? (
+            <FeatureDiscoveryView
+              onBack={() => setActiveTab("dashboard")}
+              onNavigateToGraph={() => setActiveTab("graph")}
+              onNavigateToAI={() => setActiveTab("ai")}
+              onNavigateToImpact={() => setActiveTab("impact")}
+            />
           ) : activeTab in FUTURE_FEATURES ? (
             (() => {
               const feat = FUTURE_FEATURES[activeTab];
