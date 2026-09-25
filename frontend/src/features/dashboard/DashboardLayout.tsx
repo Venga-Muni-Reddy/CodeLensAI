@@ -26,11 +26,13 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore";
 import { useProjectStore } from "../../stores/projectStore";
+import { useRepositoryStore } from "../../stores/repositoryStore";
 import { ProjectManager } from "../projects/ProjectManager";
 import { RepositoryIngestionView } from "../repositories/RepositoryIngestionView";
 import { DependencyGraphView } from "../intelligence/DependencyGraphView";
 import { FeatureDiscoveryView } from "../intelligence/FeatureDiscoveryView";
 import { AIAssistantView } from "../intelligence/AIAssistantView";
+import { ImpactAnalysisView } from "../intelligence/ImpactAnalysisView";
 
 interface DashboardLayoutProps {
   onNavigateHome?: () => void;
@@ -40,14 +42,6 @@ const FUTURE_FEATURES: Record<
   string,
   { title: string; featureId: string; phase: string; description: string; icon: React.ElementType }
 > = {
-  impact: {
-    title: "Impact Analysis & Blast Radius Engine",
-    featureId: "F-012",
-    phase: "Phase 9",
-    description:
-      "Predict exactly what will break before you merge. Compute ripple effects and downstream breakages for any changed function or symbol.",
-    icon: Zap,
-  },
   review: {
     title: "Automated Code Review Engine",
     featureId: "F-013 & F-014",
@@ -68,7 +62,8 @@ const FUTURE_FEATURES: Record<
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
   const { user, logout } = useAuthStore();
-  const { projects, activeProject, fetchProjects } = useProjectStore();
+  const { projects, activeProject, setActiveProject, fetchProjects } = useProjectStore();
+  const { repositories, activeRepository, setActiveRepository, fetchRepositories } = useRepositoryStore();
   const [activeTab, setActiveTab] = useState<
     "dashboard" | "projects" | "repositories" | "architecture" | "graph" | "features" | "ai" | "impact" | "review" | "reports"
   >("dashboard");
@@ -80,6 +75,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  useEffect(() => {
+    if (activeProject) {
+      fetchRepositories(activeProject.id);
+    }
+  }, [activeProject, fetchRepositories]);
 
   const userInitials = user?.name
     ? user.name
@@ -302,7 +303,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
 
                 <button
                   onClick={() => setActiveTab("impact")}
-                  title={isSidebarCollapsed ? "Impact Analysis (Next)" : undefined}
+                  title={isSidebarCollapsed ? "Impact Analysis (Live)" : undefined}
                   className={`w-full flex items-center ${
                     isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
                   } rounded-xl text-xs font-medium transition-all ${
@@ -312,12 +313,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <Zap className="w-4 h-4 flex-shrink-0" />
+                    <Zap className="w-4 h-4 flex-shrink-0 text-indigo-400" />
                     {!isSidebarCollapsed && <span>Impact Analysis</span>}
                   </div>
                   {!isSidebarCollapsed && (
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold">
-                      Next
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                      Live
                     </span>
                   )}
                 </button>
@@ -444,9 +445,50 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
               <span className="font-semibold text-xs text-white">CodeLens AI</span>
             </div>
             <span className="text-slate-600">/</span>
-            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-[#131622] border border-[#1f2334] text-[11px] font-mono text-sky-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-              <span>{activeProject ? activeProject.name : "production-workspace"}</span>
+            {/* Interactive Project Dropdown */}
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#131622] border border-[#1f2334] text-[11px] font-mono text-indigo-300">
+              <FolderGit2 className="w-3.5 h-3.5 text-indigo-400" />
+              <select
+                aria-label="Active Project"
+                value={activeProject?.id || ""}
+                onChange={(e) => {
+                  const found = projects.find((p) => p.id === e.target.value) || null;
+                  setActiveProject(found);
+                  if (found) fetchRepositories(found.id);
+                }}
+                className="bg-transparent text-indigo-200 text-xs font-mono focus:outline-none cursor-pointer max-w-[130px] truncate"
+              >
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id} className="bg-[#11131b] text-white">
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <span className="text-slate-600">/</span>
+            {/* Interactive Repository Dropdown */}
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-[#131622] border border-[#1f2334] text-[11px] font-mono text-cyan-300">
+              <GitBranch className="w-3.5 h-3.5 text-cyan-400" />
+              <select
+                aria-label="Active Repository"
+                value={activeRepository?.id || (repositories.length > 0 ? repositories[0].id : "")}
+                onChange={(e) => {
+                  const found = repositories.find((r) => r.id === e.target.value) || null;
+                  setActiveRepository(found);
+                }}
+                className="bg-transparent text-cyan-200 text-xs font-mono focus:outline-none cursor-pointer max-w-[150px] truncate"
+              >
+                {repositories.length > 0 ? (
+                  repositories.map((r) => (
+                    <option key={r.id} value={r.id} className="bg-[#11131b] text-white">
+                      {r.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" className="bg-[#11131b] text-slate-400">workspace-repo</option>
+                )}
+              </select>
             </div>
           </div>
 
@@ -493,7 +535,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
           </div>
         </header>
 
-        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" || activeTab === "features" || activeTab === "ai" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
+        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" || activeTab === "features" || activeTab === "ai" || activeTab === "impact" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
           {activeTab === "projects" ? (
             <ProjectManager />
           ) : activeTab === "repositories" ? (
@@ -516,6 +558,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
               onBack={() => setActiveTab("dashboard")}
               onNavigateToGraph={() => setActiveTab("graph")}
               onNavigateToImpact={() => setActiveTab("impact")}
+            />
+          ) : activeTab === "impact" ? (
+            <ImpactAnalysisView
+              onBack={() => setActiveTab("dashboard")}
+              onNavigateToGraph={() => setActiveTab("graph")}
+              onNavigateToAI={(prompt) => {
+                if (prompt) setAiInitialPrompt(prompt);
+                setActiveTab("ai");
+              }}
             />
           ) : activeTab in FUTURE_FEATURES ? (
             (() => {
