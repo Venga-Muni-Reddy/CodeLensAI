@@ -21,6 +21,8 @@ import {
   ShieldAlert,
   ArrowRight,
   BookOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore";
 import { useProjectStore } from "../../stores/projectStore";
@@ -28,6 +30,7 @@ import { ProjectManager } from "../projects/ProjectManager";
 import { RepositoryIngestionView } from "../repositories/RepositoryIngestionView";
 import { DependencyGraphView } from "../intelligence/DependencyGraphView";
 import { FeatureDiscoveryView } from "../intelligence/FeatureDiscoveryView";
+import { AIAssistantView } from "../intelligence/AIAssistantView";
 
 interface DashboardLayoutProps {
   onNavigateHome?: () => void;
@@ -37,14 +40,6 @@ const FUTURE_FEATURES: Record<
   string,
   { title: string; featureId: string; phase: string; description: string; icon: React.ElementType }
 > = {
-  ai: {
-    title: "Repository-Aware AI Assistant & Chat",
-    featureId: "F-011",
-    phase: "Phase 8",
-    description:
-      "Interactive AI coding companion with deep codebase context, RAG retrieval over your AST symbols, and token streaming.",
-    icon: MessageSquareCode,
-  },
   impact: {
     title: "Impact Analysis & Blast Radius Engine",
     featureId: "F-012",
@@ -79,6 +74,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
   >("dashboard");
   const [repoInputUrl, setRepoInputUrl] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<"active" | "all" | "empty">("active");
+  const [aiInitialPrompt, setAiInitialPrompt] = useState<string | undefined>(undefined);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -95,205 +92,290 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
 
   return (
     <div className="flex h-screen bg-[#0c0e16] text-[#e2e8f0] overflow-hidden font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* 1. Left Sidebar Navigation */}
-      <aside className="w-64 flex-shrink-0 bg-[#0c0e16] border-r border-[#1d1f28] flex flex-col justify-between select-none">
+      {/* 1. Left Sidebar Navigation (Collapsible) */}
+      <aside
+        className={`${
+          isSidebarCollapsed ? "w-16" : "w-64"
+        } flex-shrink-0 bg-[#0c0e16] border-r border-[#1d1f28] flex flex-col justify-between select-none transition-all duration-300 relative z-40`}
+      >
         <div>
-          {/* Header Brand */}
-          <div className="h-16 px-5 border-b border-[#1d1f28] flex items-center justify-between">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-indigo-400/30">
+          {/* Header Brand & Collapse Toggle */}
+          <div
+            className={`h-16 px-3 border-b border-[#1d1f28] flex items-center ${
+              isSidebarCollapsed ? "justify-center" : "justify-between"
+            }`}
+          >
+            {!isSidebarCollapsed && (
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-indigo-400/30 flex-shrink-0">
+                  <Cpu className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-bold text-white text-sm tracking-tight truncate">CodeLens AI</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-[#181a24] text-slate-400 border border-[#262835]">
+                  v2.4
+                </span>
+              </div>
+            )}
+
+            {isSidebarCollapsed && (
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-500/25 border border-indigo-400/30 flex-shrink-0">
                 <Cpu className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-white text-sm tracking-tight">CodeLens AI</span>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#181a24] text-slate-400 border border-[#262835]">
-              v2.4
-            </span>
+            )}
+
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="p-1.5 rounded-lg hover:bg-[#191c28] text-slate-400 hover:text-white transition-colors flex-shrink-0"
+              title={isSidebarCollapsed ? "Expand Sidebar (more space)" : "Collapse Sidebar (more space)"}
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4 text-indigo-400" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
+            </button>
           </div>
 
           {/* Navigation Items */}
-          <div className="p-3 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
+          <div className="p-2 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
             {/* WORKSPACE SECTION */}
             <div>
-              <div className="px-3 mb-2 text-[10px] uppercase font-mono font-bold tracking-wider text-slate-500">
-                Workspace
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="px-3 mb-2 text-[10px] uppercase font-mono font-bold tracking-wider text-slate-500">
+                  Workspace
+                </div>
+              ) : (
+                <div className="h-px bg-[#1d1f28] my-2" />
+              )}
               <div className="space-y-1">
                 <button
                   onClick={() => setActiveTab("dashboard")}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "Dashboard" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "space-x-2.5 px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "dashboard"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40 shadow-sm"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
-                  <Activity className="w-4 h-4 text-indigo-400" />
-                  <span>Dashboard</span>
+                  <Activity className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                  {!isSidebarCollapsed && <span>Dashboard</span>}
                 </button>
 
                 <button
                   onClick={() => setActiveTab("projects")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? `Projects (${projects.length})` : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "projects"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40 shadow-sm"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <FolderGit2 className="w-4 h-4" />
-                    <span>Projects</span>
+                    <FolderGit2 className="w-4 h-4 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>Projects</span>}
                   </div>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#171a26] text-slate-400">
-                    {projects.length}
-                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#171a26] text-slate-400">
+                      {projects.length}
+                    </span>
+                  )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab("repositories")}
-                  className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "Repositories" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "space-x-2.5 px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "repositories"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40 shadow-sm"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
-                  <GitBranch className="w-4 h-4 text-indigo-400" />
-                  <span>Repositories</span>
+                  <GitBranch className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                  {!isSidebarCollapsed && <span>Repositories</span>}
                 </button>
-
               </div>
             </div>
 
             {/* INTELLIGENCE SECTION */}
             <div>
-              <div className="px-3 mb-2 text-[10px] uppercase font-mono font-bold tracking-wider text-slate-500">
-                Intelligence
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="px-3 mb-2 text-[10px] uppercase font-mono font-bold tracking-wider text-slate-500">
+                  Intelligence
+                </div>
+              ) : (
+                <div className="h-px bg-[#1d1f28] my-2" />
+              )}
               <div className="space-y-1">
                 <button
                   onClick={() => setActiveTab("architecture")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "Architecture (Live)" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "architecture"
                       ? "bg-[#191c28] text-cyan-300 border border-cyan-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <Shield className="w-4 h-4 text-cyan-400" />
-                    <span>Architecture</span>
+                    <Shield className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>Architecture</span>}
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
-                    Live
-                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                      Live
+                    </span>
+                  )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab("graph")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "Dependency Graph (Live)" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "graph"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <Network className="w-4 h-4 text-indigo-400" />
-                    <span>Dependency Graph</span>
+                    <Network className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>Dependency Graph</span>}
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
-                    Live
-                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                      Live
+                    </span>
+                  )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab("features")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "Feature Discovery (Live)" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "features"
                       ? "bg-[#191c28] text-amber-300 border border-amber-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Feature Discovery</span>
+                    <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>Feature Discovery</span>}
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
-                    Live
-                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                      Live
+                    </span>
+                  )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab("ai")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "AI Assistant (Live)" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "ai"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <MessageSquareCode className="w-4 h-4 text-indigo-400" />
-                    <span>AI Assistant</span>
+                    <MessageSquareCode className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>AI Assistant</span>}
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold">
-                    Next
-                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                      Live
+                    </span>
+                  )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab("impact")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "Impact Analysis (Next)" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "impact"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <Zap className="w-4 h-4" />
-                    <span>Impact Analysis</span>
+                    <Zap className="w-4 h-4 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>Impact Analysis</span>}
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    Soon
-                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold">
+                      Next
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
 
             {/* QUALITY SECTION */}
             <div>
-              <div className="px-3 mb-2 text-[10px] uppercase font-mono font-bold tracking-wider text-slate-500">
-                Quality
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="px-3 mb-2 text-[10px] uppercase font-mono font-bold tracking-wider text-slate-500">
+                  Quality
+                </div>
+              ) : (
+                <div className="h-px bg-[#1d1f28] my-2" />
+              )}
               <div className="space-y-1">
                 <button
                   onClick={() => setActiveTab("review")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "Code Review (Soon)" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "review"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <ShieldAlert className="w-4 h-4" />
-                    <span>Code Review</span>
+                    <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>Code Review</span>}
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    Soon
-                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                      Soon
+                    </span>
+                  )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab("reports")}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                  title={isSidebarCollapsed ? "Reports (Soon)" : undefined}
+                  className={`w-full flex items-center ${
+                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
+                  } rounded-xl text-xs font-medium transition-all ${
                     activeTab === "reports"
                       ? "bg-[#191c28] text-indigo-300 border border-indigo-500/40"
                       : "text-slate-400 hover:text-slate-200 hover:bg-[#12141e]"
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <FileText className="w-4 h-4" />
-                    <span>Reports</span>
+                    <FileText className="w-4 h-4 flex-shrink-0" />
+                    {!isSidebarCollapsed && <span>Reports</span>}
                   </div>
-                  <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    Soon
-                  </span>
+                  {!isSidebarCollapsed && (
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                      Soon
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -301,25 +383,43 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
         </div>
 
         {/* User Footer Profile */}
-        <div className="p-3 border-t border-[#1d1f28] bg-[#0c0e16]">
-          <div className="flex items-center justify-between p-2 rounded-xl bg-[#12141e] border border-[#1e2230]">
-            <div className="flex items-center space-x-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-[#202538] border border-[#30364e] flex items-center justify-center font-semibold text-slate-200 text-xs">
+        <div className="p-2 border-t border-[#1d1f28] bg-[#0c0e16]">
+          {!isSidebarCollapsed ? (
+            <div className="flex items-center justify-between p-2 rounded-xl bg-[#12141e] border border-[#1e2230]">
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-[#202538] border border-[#30364e] flex items-center justify-center font-semibold text-slate-200 text-xs">
+                  {userInitials}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white truncate">{user?.name || "Developer"}</div>
+                  <div className="text-[10px] text-slate-500 truncate">Free Plan</div>
+                </div>
+              </div>
+              <button
+                onClick={logout}
+                title="Sign Out"
+                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 py-1">
+              <div
+                className="w-8 h-8 rounded-full bg-[#202538] border border-[#30364e] flex items-center justify-center font-semibold text-slate-200 text-xs"
+                title={`${user?.name || "Developer"} (Free Plan)`}
+              >
                 {userInitials}
               </div>
-              <div className="min-w-0">
-                <div className="text-xs font-semibold text-white truncate">{user?.name || "Developer"}</div>
-                <div className="text-[10px] text-slate-500 truncate">Free Plan</div>
-              </div>
+              <button
+                onClick={logout}
+                title="Sign Out"
+                className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <button
-              onClick={logout}
-              title="Sign Out"
-              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+          )}
         </div>
       </aside>
 
@@ -328,6 +428,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
         {/* Top Header Bar */}
         <header className="h-16 border-b border-[#1d1f28] bg-[#0c0e16]/90 backdrop-blur-md px-6 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center space-x-3">
+            {isSidebarCollapsed && (
+              <button
+                onClick={() => setIsSidebarCollapsed(false)}
+                className="p-1.5 rounded-lg bg-[#12141e] border border-[#1f2334] text-slate-400 hover:text-white hover:bg-[#191c28] transition-colors"
+                title="Expand navigation sidebar"
+              >
+                <PanelLeftOpen className="w-4 h-4 text-indigo-400" />
+              </button>
+            )}
             <div className="flex items-center space-x-2">
               <div className="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
                 <Cpu className="w-3.5 h-3.5" />
@@ -384,7 +493,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
           </div>
         </header>
 
-        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" || activeTab === "features" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
+        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" || activeTab === "features" || activeTab === "ai" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
           {activeTab === "projects" ? (
             <ProjectManager />
           ) : activeTab === "repositories" ? (
@@ -395,7 +504,17 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
             <FeatureDiscoveryView
               onBack={() => setActiveTab("dashboard")}
               onNavigateToGraph={() => setActiveTab("graph")}
-              onNavigateToAI={() => setActiveTab("ai")}
+              onNavigateToAI={(context) => {
+                setAiInitialPrompt(context);
+                setActiveTab("ai");
+              }}
+              onNavigateToImpact={() => setActiveTab("impact")}
+            />
+          ) : activeTab === "ai" ? (
+            <AIAssistantView
+              initialPrompt={aiInitialPrompt}
+              onBack={() => setActiveTab("dashboard")}
+              onNavigateToGraph={() => setActiveTab("graph")}
               onNavigateToImpact={() => setActiveTab("impact")}
             />
           ) : activeTab in FUTURE_FEATURES ? (

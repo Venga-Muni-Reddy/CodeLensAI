@@ -47,18 +47,24 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # AI Provider Settings (OpenRouter primary with Gemini and OpenAI fallbacks)
+    # AI Provider Settings (OpenRouter primary with cascading fallbacks: Gemini -> OpenAI -> Grok -> Deterministic Mock)
     AI_PRIMARY_PROVIDER: str = "openrouter"
     OPENROUTER_API_KEY: Optional[str] = None
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    OPENROUTER_DEFAULT_MODEL: str = "anthropic/claude-3.5-sonnet"
+    OPENROUTER_MODEL: str = "openai/gpt-3.5-turbo"
+    OPENROUTER_DEFAULT_MODEL: str = "openai/gpt-3.5-turbo"
 
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
     GEMINI_DEFAULT_MODEL: str = "gemini-1.5-pro"
 
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     OPENAI_DEFAULT_MODEL: str = "gpt-4o"
+
+    GROK_API_KEY: Optional[str] = None
+    GROK_BASE_URL: str = "https://api.x.ai/v1"
+    GROK_DEFAULT_MODEL: str = "grok-beta"
 
     # Storage
     STORAGE_TYPE: str = "local"
