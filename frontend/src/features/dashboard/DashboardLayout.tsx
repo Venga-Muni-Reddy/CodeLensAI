@@ -33,6 +33,7 @@ import { DependencyGraphView } from "../intelligence/DependencyGraphView";
 import { FeatureDiscoveryView } from "../intelligence/FeatureDiscoveryView";
 import { AIAssistantView } from "../intelligence/AIAssistantView";
 import { ImpactAnalysisView } from "../intelligence/ImpactAnalysisView";
+import { CodeReviewView } from "../intelligence/CodeReviewView";
 
 interface DashboardLayoutProps {
   onNavigateHome?: () => void;
@@ -42,14 +43,6 @@ const FUTURE_FEATURES: Record<
   string,
   { title: string; featureId: string; phase: string; description: string; icon: React.ElementType }
 > = {
-  review: {
-    title: "Automated Code Review Engine",
-    featureId: "F-013 & F-014",
-    phase: "Phase 10",
-    description:
-      "Static heuristics combined with AI reviewers to find security vulnerabilities, code smells, performance bottlenecks, and generate non-destructive patches.",
-    icon: ShieldAlert,
-  },
   reports: {
     title: "Repository Intelligence Reports Export",
     featureId: "F-015",
@@ -337,7 +330,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
               <div className="space-y-1">
                 <button
                   onClick={() => setActiveTab("review")}
-                  title={isSidebarCollapsed ? "Code Review (Soon)" : undefined}
+                  title={isSidebarCollapsed ? "Code Review (Live)" : undefined}
                   className={`w-full flex items-center ${
                     isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
                   } rounded-xl text-xs font-medium transition-all ${
@@ -347,12 +340,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
                   }`}
                 >
                   <div className="flex items-center space-x-2.5">
-                    <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                    <ShieldAlert className="w-4 h-4 flex-shrink-0 text-indigo-400" />
                     {!isSidebarCollapsed && <span>Code Review</span>}
                   </div>
                   {!isSidebarCollapsed && (
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                      Soon
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                      Live
                     </span>
                   )}
                 </button>
@@ -563,6 +556,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
             <ImpactAnalysisView
               onBack={() => setActiveTab("dashboard")}
               onNavigateToGraph={() => setActiveTab("graph")}
+              onNavigateToAI={(prompt) => {
+                if (prompt) setAiInitialPrompt(prompt);
+                setActiveTab("ai");
+              }}
+            />
+          ) : activeTab === "review" ? (
+            <CodeReviewView
+              onBack={() => setActiveTab("dashboard")}
               onNavigateToAI={(prompt) => {
                 if (prompt) setAiInitialPrompt(prompt);
                 setActiveTab("ai");

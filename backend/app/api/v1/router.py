@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, auth, project, repository, analysis, graph, features, chat, impact
+from app.api.v1.endpoints import health, auth, project, repository, analysis, graph, features, chat, impact, review
 
 api_router = APIRouter()
 
@@ -13,6 +13,7 @@ api_router.include_router(graph.router)
 api_router.include_router(features.router)
 api_router.include_router(chat.router)
 api_router.include_router(impact.router)
+api_router.include_router(review.router)
 
 
 
