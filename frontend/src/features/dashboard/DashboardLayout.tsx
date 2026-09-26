@@ -34,6 +34,7 @@ import { FeatureDiscoveryView } from "../intelligence/FeatureDiscoveryView";
 import { AIAssistantView } from "../intelligence/AIAssistantView";
 import { ImpactAnalysisView } from "../intelligence/ImpactAnalysisView";
 import { CodeReviewView } from "../intelligence/CodeReviewView";
+import { ReportsExportView } from "../intelligence/ReportsExportView";
 
 interface DashboardLayoutProps {
   onNavigateHome?: () => void;
@@ -42,16 +43,7 @@ interface DashboardLayoutProps {
 const FUTURE_FEATURES: Record<
   string,
   { title: string; featureId: string; phase: string; description: string; icon: React.ElementType }
-> = {
-  reports: {
-    title: "Repository Intelligence Reports Export",
-    featureId: "F-015",
-    phase: "Phase 11",
-    description:
-      "Export high-resolution architecture diagrams, audit reports, tech debt indexes, and compliance documentation to PDF, Markdown, and DOCX.",
-    icon: FileText,
-  },
-};
+> = {};
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
   const { user, logout } = useAuthStore();
@@ -352,7 +344,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
 
                 <button
                   onClick={() => setActiveTab("reports")}
-                  title={isSidebarCollapsed ? "Reports (Soon)" : undefined}
+                  title={isSidebarCollapsed ? "Reports (Live)" : undefined}
                   className={`w-full flex items-center ${
                     isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2"
                   } rounded-xl text-xs font-medium transition-all ${
@@ -366,8 +358,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
                     {!isSidebarCollapsed && <span>Reports</span>}
                   </div>
                   {!isSidebarCollapsed && (
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                      Soon
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">
+                      Live
                     </span>
                   )}
                 </button>
@@ -528,7 +520,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
           </div>
         </header>
 
-        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" || activeTab === "features" || activeTab === "ai" || activeTab === "impact" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
+        <main className={`flex-1 overflow-y-auto ${activeTab === "graph" || activeTab === "architecture" || activeTab === "features" || activeTab === "ai" || activeTab === "impact" || activeTab === "review" || activeTab === "reports" ? "p-0 overflow-hidden" : "p-6 space-y-6"}`}>
           {activeTab === "projects" ? (
             <ProjectManager />
           ) : activeTab === "repositories" ? (
@@ -563,6 +555,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
             />
           ) : activeTab === "review" ? (
             <CodeReviewView
+              onBack={() => setActiveTab("dashboard")}
+              onNavigateToAI={(prompt) => {
+                if (prompt) setAiInitialPrompt(prompt);
+                setActiveTab("ai");
+              }}
+            />
+          ) : activeTab === "reports" ? (
+            <ReportsExportView
               onBack={() => setActiveTab("dashboard")}
               onNavigateToAI={(prompt) => {
                 if (prompt) setAiInitialPrompt(prompt);

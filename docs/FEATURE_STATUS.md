@@ -28,7 +28,7 @@ Tracking matrix for all CodeLensAI product features and development phases as de
 | **Phase 8** | Repository-Aware AI Assistant & Explanations (F-011) | `COMPLETED` | 2026-09-25 |
 | **Phase 9** | Impact Analysis Engine (F-012) | `COMPLETED` | 2026-09-25 |
 | **Phase 10** | Automated Code Review & Patch Generation (F-013, F-014) | `COMPLETED` | 2026-09-26 |
-| **Phase 11** | Intelligence Reports Export (F-015) | `BACKLOG` | — |
+| **Phase 11** | Intelligence Reports Export (F-015) | `COMPLETED` | 2026-09-26 |
 
 ---
 
@@ -51,4 +51,4 @@ Tracking matrix for all CodeLensAI product features and development phases as de
 | **F-012** | Impact Analysis Engine | PRD §26-27 | §65-67 | `COMPLETED` | Concentric shockwave visualizer, 4-hop transitive blast radius, Martin coupling instability scoring, contract break detectors, AI Refactoring Advisor with backward-compatibility wrappers, Stitch workbench UI |
 | **F-013** | Automated Code Review Engine | PRD §28-30 | §68-75 | `COMPLETED` | Static heuristics + AI analysis of bugs, smells, security, repo health gauge (0-100), OWASP Top 10 compliance |
 | **F-014** | Patch Generation & Fix Assistant | PRD §31 | §76-78 | `COMPLETED` | Non-destructive unified & side-by-side AST diff viewer, guardrails checklist, .patch export, branch application, AI Assistant handoff |
-| **F-015** | Repository Intelligence Reports Export | PRD §32 | §79-82 | `BACKLOG` | Markdown, PDF, and DOCX summary exports |
+| **F-015** | Repository Intelligence Reports Export | PRD §32 | §79-82 | `COMPLETED` | Multi-domain report synthesis, 3 executive presets, live render sheet preview, markdown download with Mermaid diagrams, machine-readable JSON dossier export, and print/PDF generation |
